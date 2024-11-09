@@ -29,7 +29,7 @@ To run the script, you need to have the following Python libraries installed:
 You can install missing dependencies with pip:
 ```bash
 pip install opencv-python numpy
-
+```
 ## Usage
 ### Initial Setup
 Before running the script, make sure you have a directory with `.db3` files (ROS2 bag data) that contain the `/camera/camera/color/image_raw` topic. The script will process these files to extract images.
