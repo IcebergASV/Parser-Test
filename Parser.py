@@ -1,4 +1,4 @@
-#Webcam parser script V0.0.1 - RF
+#Webcam parser script V1.0.0 - RF and DD
 
 #System Dependencies
 import os
@@ -8,6 +8,9 @@ import sqlite3
 from rosidl_runtime_py.utilities import get_message
 from rclpy.serialization import deserialize_message
 from rclpy.time import Time
+
+#Import OpenCV
+import cv2
 
 #Parsing Dependencies
 import numpy as np
@@ -36,12 +39,18 @@ class Parser():
         self.fail_count = 0
         self.db_count = 0
 
+        self.image_dir = path + "/proc/"
+        os.makedirs(self.image_dir, exist_ok = True)
+
         #Use walk to get root dir, and files
         for (root, dirs, files) in os.walk(path, topdown = True):
             #Iterate through (sorted) list of files
             dirs.sort()
+
+            print(files)
             
             for file in sorted(files):
+                print(file)
                 #If file is of the appropriate type
                 if ".db3" in file:
                     #Calculate absolute path
@@ -108,25 +117,31 @@ class Parser():
             rows = self.fileCursors[it].execute("SELECT timestamp, data FROM messages WHERE topic_id = {}".format(topic_id)).fetchall()
             return [(deserialize_message(data, self.topic_messages[it][topic_name])) for timestamp, data in rows]
         
+    
     def __convert_webcam_to_png(self, it):
-        raw_messages = self.__get_messages("/image_raw", it)
+        raw_messages = self.__get_messages("/camera/camera/color/image_raw", it)
 
-        if (raw_messages == False):
-                return False
-        
-        img_list = []
+        if raw_messages is False:
+            return False
 
-        for message in raw_messages: 
+        i = 0
+
+        for message in raw_messages:
+            # Convert data to a numpy array with the specified shape
             try:
-                img = np.asarray(message.data, dtype = "uint8")
-                file = open(self.image_dir + ".png", "wb")
-                file.write(img)
+                img_data = np.array(message.data, dtype=np.uint8)
+                img = img_data.reshape((message.height, message.width, 3))  # 3 channels for RGB
 
-            except:
-                print("Error saving file")
+                # Save the image
+                cv2.imwrite(f"{self.image_dir}pic{i}.png", img)
+                i += 1
+            except Exception as e:
+                print(f"Warning: Decoding image data failed due to {e}")
+                continue  # Skip this iteration if decoding fails
 
         return True
 
+
 if __name__ == "__main__":
-    P00 = Parser("/path/to/dir")
+    P00 = Parser("./rosbag_sensors_1969-12-31_20-50-50.bag")
     P00.parse_all()
