@@ -127,21 +127,26 @@ class Parser():
         i = 0
 
         for message in raw_messages:
+            if i % 30 == 0:
             # Convert data to a numpy array with the specified shape
-            try:
-                img_data = np.array(message.data, dtype=np.uint8)
-                img = img_data.reshape((message.height, message.width, 3))  # 3 channels for RGB
+                try:
+                    img_data = np.array(message.data, dtype=np.uint8)
+                    img = img_data.reshape((message.height, message.width, 3))
+                    img2 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-                # Save the image
-                cv2.imwrite(f"{self.image_dir}pic{i}.png", img)
+                    # Save the image
+                    cv2.imwrite(f"{self.image_dir}pic{i}.png", img2)
+                    i += 1
+                except Exception as e:
+                    print(f"Warning: Decoding image data failed due to {e}")
+                    continue  # Skip this iteration if decoding fails
+
+            else:
                 i += 1
-            except Exception as e:
-                print(f"Warning: Decoding image data failed due to {e}")
-                continue  # Skip this iteration if decoding fails
 
         return True
 
 
 if __name__ == "__main__":
-    P00 = Parser("./rosbag_sensors_1969-12-31_20-50-50.bag")
+    P00 = Parser("./oct5/rosbag2_1969_12_31-21_30_14")
     P00.parse_all()
